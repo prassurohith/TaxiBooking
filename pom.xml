@@ -12,7 +12,7 @@
 
   <artifactId>taxi-booking-1.0.1</artifactId>
   <packaging>war</packaging>
-  <name>taxi-booking-1.0.1</name>
+  <name>Taxi-Booking</name>
   <description>Webapp.</description>
 
   <build>
