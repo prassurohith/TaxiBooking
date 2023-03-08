@@ -1,0 +1,75 @@
+pipeline{
+    
+    agent any 
+    
+	parameters{
+	   
+	   choice(name: 'action', choices: 'create\ndestroy\ndestroyekscluster' description: 'create/update deployments on eks cluster')
+	   string(name: 'cluster', defaultvalue: 'demo-cluster', description: 'Eks Cluster Region')
+	   string(name: 'region', defaultvalue: 'us-east-1', description: 'EKS cluster region')
+	}
+	environment{
+	  
+	  ACCESS_KEY = credentials('aws_access_key_id')
+	  SECRET_KEY = credentials('aws_secret_access_key')
+	
+	}
+    stages {
+        
+        stage('Git Checkout'){
+            
+            steps{
+                
+                script{
+                    
+                    git branch: 'main', url: 'https://github.com/prassurohith/TaxiBooking.git'
+                }
+            }
+        }
+
+stage('EKS Cluster Connect'){
+            
+            steps{
+              
+              sh  """
+                  aws configure set aws_access_key_id "$ACCESS_KEY"
+                  aws configure set aws_secret_access_key "SECRET_KEY"
+                  aws eks --region ${params.region} update-kubeconfig --name ${params.cluster}				  
+              
+            }
+        }
+
+ stage('EKS Deployment'){
+            
+	  when { expression { params.action == 'create' }}		
+	  steps{
+                
+            script{
+				
+                def apply = false 				
+                try{
+				
+				input message: 'please confirm the apply to innitiate the deployments'
+				apply = true
+				}
+                
+				catch(err){
+				  apply = false 
+				  currentBuild.result= 'Unstable'
+				}
+				
+				if(apply) {
+				
+				sh """
+				   kubectl apply -f .
+				   
+				   """
+				}
+				
+				}
+            }
+        }
+    }
+
+}
+

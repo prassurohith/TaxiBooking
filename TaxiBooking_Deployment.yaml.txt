@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: TaxiBookingApp-Deployment
+  labels:
+    app: TaxiBookingApp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: TaxiBookingApp
+  template:
+    metadata:
+      labels:
+        app: TaxiBookingApp
+    spec:
+      containers:
+      - name: TaxiBookingApp
+        image: prassurohith9999/TaxiBooking:latest
+		imagePullPolicy: always
+        ports:
+        - containerPort: 8080
