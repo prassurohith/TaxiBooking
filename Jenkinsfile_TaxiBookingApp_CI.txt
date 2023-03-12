@@ -79,7 +79,7 @@ stage('Docker Image Build'){
                   }
                                        }	
 
-##Use With Credentials to Bind Variables for Docker Hub login Details
+
 
 stage('Push Docker Image To Docker Hub'){                                                                      
             steps{
