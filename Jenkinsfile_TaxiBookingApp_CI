@@ -84,7 +84,7 @@ stage('Push Docker Image To Docker Hub'){
 	     
                  sh 'docker login -u prassurohith9999 -p Bhagyaraj@1993'
 		         sh 'docker image push prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
-		         sh 'docker image push  prassurohith/$JOB_NAME:latest'
+		         sh 'docker image push  prassurohith9999/$JOB_NAME:latest'
 		  
                                                                
 		}		                                                            
