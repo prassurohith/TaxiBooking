@@ -93,16 +93,16 @@ stage('Push Docker Image To Docker Hub'){
                                        }									   
 stage('Push Docker Image To Docker Hub'){                                                                      
             steps{
-                echo '<---------------Push Docker Image To Docker Hub  Started --------------->'
+                echo '<---------------Deploy Docker Container on Deployment Server  Started--------------->'
                  script{
 	     withCredentials([usernameColonPassword(credentialsId: 'DeploymentHost', variable: 'TomcatDeploymentSerever')]) {
     
 
                  sh 'docker login -u prassurohith9999 -p Bhagyaraj@1993'   
 				 sh 'docker run -it  -p  8080:8888  prassurohith9999/taxibooking:latest'
-                                                                                                                         }				 
+                                                                                                                         			 
 		}		                                                            
-                echo '<---------------Push Docker Image To Docker Hub  Completed--------------->'
+                echo '<---------------Deploy Docker Container on Deployment Server  Completed--------------->'
                        }
                                         }
 										
