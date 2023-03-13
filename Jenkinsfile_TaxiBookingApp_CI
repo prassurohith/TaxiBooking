@@ -17,5 +17,15 @@ stages {
                 echo '<------------- Getting Code From GitHub completed --------------->'
                   }
                                        }
+				       
+stage('Build & Compile Source Code') {
+            steps {
+                echo '<--------------- Build & Compile Source Code --------------->'
+              
+			     sh  'mvn clean install'
+			    
+                echo '<--------------- Build & Compile Source Code Completed --------------->'
+                  }
+                                       }				
 }
 }
