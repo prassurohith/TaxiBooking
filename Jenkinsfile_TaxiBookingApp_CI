@@ -42,7 +42,7 @@ stage('Sonar Quality Gate '){
             steps{
                 echo '<--------------- Quality Gate Analysis with SonarQube --------------->'
                  script{
-			     "waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'"
+			     "waitForQualityGate abortPipeline: false, credentialsId: 'SonarQubeCreds'"
                          }                                          
 				                                                            
                 echo '<--------------- Quality Gate Analysis with SonarQube Completed--------------->'
@@ -82,7 +82,7 @@ stage('Push Docker Image To Docker Hub'){
                 echo '<---------------Push Docker Image To Docker Hub  Started --------------->'
                  script{
 	      
-		  withCredentials([string(credentialsId: 'dockerhubcred', variable: 'docker_hub_cred')]) {
+		  withCredentials([string(credentialsId: 'dockerhubcred', variable: 'dockerhubcred')]) {
    
           sh 'docker login -u prassurohith9999 -p ${docker_hub_cred}'
 		  sh 'docker image push prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
