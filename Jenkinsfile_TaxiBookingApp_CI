@@ -17,7 +17,6 @@ stages {
                 echo '<------------- Getting Code From GitHub completed --------------->'
                   }
                                        }
-				       
 stage('Build & Compile Source Code') {
             steps {
                 echo '<--------------- Build & Compile Source Code --------------->'
@@ -26,17 +25,74 @@ stage('Build & Compile Source Code') {
 			    
                 echo '<--------------- Build & Compile Source Code Completed --------------->'
                   }
-                                       }
+                                       }	
 stage('SonarQube Analysis'){                                                                      
             steps{
                 echo '<--------------- Static Code Analysis with SonarQube --------------->'
                  script{
-			     withSonarQubeEnv(credentialsId: 'sonarqube-token')  {
+			     withSonarQubeEnv(credentialsId: 'Sonar-Token')  {
                   sh 'mvn clean package  sonar:sonar'
                          }                                          
 				                                                            }
                 echo '<--------------- Static Code Analysis with SonarQube Completed--------------->'
                   }
-                                       }				       
-}
+                                       }
+
+stage('Sonar Quality Gate '){                                                                      
+            steps{
+                echo '<--------------- Quality Gate Analysis with SonarQube --------------->'
+                 script{
+			     "waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'"
+                         }                                          
+				                                                            
+                echo '<--------------- Quality Gate Analysis with SonarQube Completed--------------->'
+                  }
+                                       }	
+stage('Upload Artifact to Artifact Repository'){                                                                      
+            steps{
+                echo '<---------------Upload Artifact to Artifact Repository Started --------------->'
+                 script{
+				 
+                 nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'My_Maven_Release_Hosted_Repository', version: "1.0"
+
+                       }                                          
+				                                                            
+                echo '<--------------- Upload Artifact to Artifact Repository  Completed--------------->'
+                  }
+                                       }		
+
+stage('Docker Image Build'){                                                                      
+            steps{
+                echo '<---------------Docker Image Build  Started --------------->'
+                 script{
+				    sh 'docker rmi  docker rmi -f $(docker images -aq) '
+				    sh 'docker image build -t $JOB_NAME:v1.$BUILD_ID .'
+				    sh 'docker image tag $JOB_NAME:v1.$BUILD_ID  prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
+			        sh 'docker image tag $JOB_NAME:v1.$BUILD_ID  prassurohith9999/$JOB_NAME:latest'
+                       }                                          
+				                                                            
+                echo '<---------------Docker Image Build  Completed--------------->'
+                  }
+                                       }	
+
+
+
+stage('Push Docker Image To Docker Hub'){                                                                      
+            steps{
+                echo '<---------------Push Docker Image To Docker Hub  Started --------------->'
+                 script{
+	      
+		  withCredentials([string(credentialsId: 'dockerhubcred', variable: 'docker_hub_cred')]) {
+   
+          sh 'docker login -u prassurohith9999 -p ${docker_hub_cred}'
+		  sh 'docker image push prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
+		  sh 'docker image push  prassurohith/$JOB_NAME:latest'
+		  
+                       }                                          
+		}		                                                            
+                echo '<---------------Push Docker Image To Docker Hub  Completed--------------->'
+                  }
+                                       }									   
+									   
+        }
 }
