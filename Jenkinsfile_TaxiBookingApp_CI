@@ -26,6 +26,17 @@ stage('Build & Compile Source Code') {
 			    
                 echo '<--------------- Build & Compile Source Code Completed --------------->'
                   }
-                                       }				
+                                       }
+stage('SonarQube Analysis'){                                                                      
+            steps{
+                echo '<--------------- Static Code Analysis with SonarQube --------------->'
+                 script{
+			     withSonarQubeEnv(credentialsId: 'sonarqube-token')  {
+                  sh 'mvn clean package  sonar:sonar'
+                         }                                          
+				                                                            }
+                echo '<--------------- Static Code Analysis with SonarQube Completed--------------->'
+                  }
+                                       }				       
 }
 }
