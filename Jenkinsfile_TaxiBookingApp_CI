@@ -105,6 +105,7 @@ stage('Push Docker Image To Docker Hub'){
                 echo '<---------------Deploy Docker Container on Deployment Server  Completed--------------->'
                        }
                                         }
+										}
 										
         }
 }
