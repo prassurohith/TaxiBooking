@@ -30,7 +30,7 @@ stage('SonarQube Analysis'){
             steps{
                 echo '<--------------- Static Code Analysis with SonarQube --------------->'
                  script{
-			     withSonarQubeEnv(credentialsId: 'Sonar-Token')  {
+			      withSonarQubeEnv(credentialsId: 'SonarQubeCreds')  {
                   sh 'mvn clean package  sonar:sonar'
                          }                                          
 				                                                            }
