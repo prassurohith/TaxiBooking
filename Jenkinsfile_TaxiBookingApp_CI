@@ -1,102 +1,133 @@
-pipeline {
+pipeline{
 agent {
        node {
          label "MAVEN"
-            }      
+            }
       }
+options {
+         retry(2)
+         buildDiscarder(logRotator(numToKeepStr:'2'))
+         disableConcurentBuilds()
+         timeout(time:10, units:'MINUTES')
+         timestamps()
+        }
+triggers{
+        pollSCM('* * * * *')
+        }
 environment{
-PATH = "$PATH:/opt/mvn/apache-maven"    
-}
+        PATH = "$PATH:/opt/mvn/apache-maven"
+           }
 stages {
-        stage('Get Code From GitHub') {                                                
-            steps {
-                echo '<--------------- Getting Code From GitHub--------------->'
-              
-			    git branch: 'main', credentialsId: '57c0ce68-28eb-4a5b-8ea5-bdabab415bb8', url: 'https://github.com/prassurohith/TaxiBooking.git'
-			    
-                echo '<------------- Getting Code From GitHub completed --------------->'
-                  }
-                                       }
-stage('Build & Compile Source Code') {
-            steps {
-                echo '<--------------- Build & Compile Source Code --------------->'
-              
-			     sh  'mvn clean install'
-			    
-                echo '<--------------- Build & Compile Source Code Completed --------------->'
-                  }
-                                       }	
-stage('SonarQube Analysis'){                                                                      
-            steps{
-                echo '<--------------- Static Code Analysis with SonarQube --------------->'
-                 script{
-			      withSonarQubeEnv(credentialsId: 'SonarQubeCreds')  {
+
+//1.In this Stage job Will Import  Source Code from GitHub repository.
+
+    stage('Get Code From GitHub') {
+         steps {
+              echo '<--------------- Getting Code From GitHub--------------->'
+
+           	  git branch: 'main', credentialsId: '57c0ce68-28eb-4a5b-8ea5-bdabab415bb8', url: 'https://github.com/prassurohith/TaxiBooking.git'
+
+              echo '<------------- Getting Code From GitHub completed --------------->'
+               }
+                                  }
+
+//2. In this Stage  Build & Compile  the  Above imported Source code.
+
+    stage('Build & Compile Source Code') {
+         steps {
+              echo '<--------------- Build & Compile Source Code --------------->'
+
+              sh  'mvn clean install'
+
+              echo '<--------------- Build & Compile Source Code Completed --------------->'
+              }
+                                          }
+//3. In this Stage job will Analysis will above compiled code with SonarQube.
+// for this stage we used withSonarQubeEnv plugin to generate declarative pipeline syntax.
+
+stage('SonarQube Analysis'){
+     steps{
+           echo '<--------------- Static Code Analysis with SonarQube --------------->'
+           script{
+			            withSonarQubeEnv(credentialsId:'SonarQubeCreds')  {
                   sh 'mvn clean package  sonar:sonar'
-                         }                                          
+                 }
 				                                                            }
                 echo '<--------------- Static Code Analysis with SonarQube Completed--------------->'
-                  }
-                                       }
+          }
+                          }
 
-stage('Sonar Quality Gate '){                                                                      
+
+//4. In this Stage  Job needs to pass the quality checks using SonarQube.
+//   Here we use waitForQualityGate plugin to generate declarative pipeline syntax.
+
+stage('Sonar Quality Gate '){
             steps{
                 echo '<--------------- Quality Gate Analysis with SonarQube --------------->'
                  script{
 			     "waitForQualityGate abortPipeline: false, credentialsId: 'SonarQubeCreds'"
-                         }                                          
-				                                                            
+                       }
+
                 echo '<--------------- Quality Gate Analysis with SonarQube Completed--------------->'
                   }
-                                       }	
-stage('Upload Artifact to Artifact Repository'){                                                                      
-            steps{
-                echo '<---------------Upload Artifact to Artifact Repository Started --------------->'
-                 script{
-				 
+                           }
+
+//5. In this Stage Above Created Final Artifact will be uploaded to Nexus Artifactory Based on releases or Snapshots.
+//   Here we used nexus nexusArtifactUploader plugin to generate declarative pipeline syntax.
+
+stage('Upload Artifact to Artifact Repository'){
+    steps{
+      echo '<---------------Upload Artifact to Artifact Repository Started --------------->'
+      script{
+
 				 def mavenPom = readMavenPom file: 'pom.xml'
-				 
-				 
 				 def nexusRepoName = mavenPom.version.endsWith("-SNAPSHOT") ? "My_Maven_Snapshots_Hosted_Repository"  or  "My_Maven_Release_Hosted_Repository"
 
+         nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: "nexusRepoName, version: "${ mavenPom.version}"
 
-                 nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: "nexusRepoName, version: "${ mavenPom.version}"
+            }
 
-                       }                                          
-				                                                            
-                echo '<--------------- Upload Artifact to Artifact Repository  Completed--------------->'
-                  }
-                                       }		
+      echo '<--------------- Upload Artifact to Artifact Repository  Completed--------------->'
+        }
+                                                }
 
-stage('Docker Image Build'){                                                                      
-            steps{
-                echo '<---------------Docker Image Build  Started --------------->'
-                 script{
+
+//6. In this Stage Job will Build  a Docker Image.
+//   We use Multiple Shell Commands.
+
+
+stage('Docker Image Build'){
+    steps{
+    echo '<---------------Docker Image Build  Started --------------->'
+       script{
 				    sh 'docker rmi  docker rmi -f $(docker images -aq)'
 				    sh 'docker image build -t $JOB_NAME:v1.$BUILD_ID .'
 				    sh 'docker image tag $JOB_NAME:v1.$BUILD_ID  prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
-			        sh 'docker image tag $JOB_NAME:v1.$BUILD_ID  prassurohith9999/$JOB_NAME:latest'
-                       }                                          
-				                                                            
-                echo '<---------------Docker Image Build  Completed--------------->'
-                  }
-                                       }	
+			      sh 'docker image tag $JOB_NAME:v1.$BUILD_ID  prassurohith9999/$JOB_NAME:latest'
+             }
+		echo '<---------------Docker Image Build  Completed--------------->'
+          }
+                           }
 
-stage('Push Docker Image To Docker Hub'){                                                                      
-            steps{
-                echo '<---------------Push Docker Image To Docker Hub  Started --------------->'
-                 script{
-	     
-                 sh 'docker login -u prassurohith9999 -p Bhagyaraj@1993'
+//7.  In This Stage Above created Docker Image can be Pushed to DockerHub.
+//    We use Multiple Shell Commands.
+
+stage('Push Docker Image To Docker Hub'){
+    steps{
+    echo '<---------------Push Docker Image To Docker Hub  Started --------------->'
+    script{
+
+             sh 'docker login -u prassurohith9999 -p Bhagyaraj@1993'
 		         sh 'docker image push prassurohith9999/$JOB_NAME:v1.$BUILD_ID'
 		         sh 'docker image push  prassurohith9999/$JOB_NAME:latest'
-				 sh 'docker rmi  docker rmi -f $(docker images -aq)'
-		         
-                                                               
-		}		                                                            
+				     sh 'docker rmi  docker rmi -f $(docker images -aq)'
+          }
                 echo '<---------------Push Docker Image To Docker Hub  Completed--------------->'
-				
-                  }
-                                       }									   
-										
-        }
+
+          }
+                                       }
+
+      }
+   }
+
 }
