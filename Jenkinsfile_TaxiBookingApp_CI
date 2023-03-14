@@ -53,7 +53,10 @@ stage('Upload Artifact to Artifact Repository'){
                 echo '<---------------Upload Artifact to Artifact Repository Started --------------->'
                  script{
 				 
-                 nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'My_Maven_Release_Hosted_Repository', version: "1.0"
+				 def readPomVersion = readMavenPom file: 'pom.xml'
+				 def nexusRepo = readPomVersion.version.endsWith("SNAPSHOT") ? "My_Maven_Snapshots_Hosted_Repository" : "My_Maven_Release_Hosted_Repository"
+
+                 nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'My_Maven_Release_Hosted_Repository', version: "${readPomVersion.version}"
 
                        }                                          
 				                                                            
@@ -91,18 +94,6 @@ stage('Push Docker Image To Docker Hub'){
 				
                   }
                                        }									   
-stage('Deploy Docker Container on Deployment Server'){                                                                      
-            steps{
-                echo '<---------------Deploy Docker Container on Deployment Server  Started--------------->'
-                 script{
-	     withCredentials([usernameColonPassword(credentialsId: 'DeploymentHost', variable: 'TomcatDeploymentSerever')]) {
-    
-				 sh 'docker run -it  -p  8080:8888  prassurohith9999/taxibooking:latest'
-                                                      	}		                                                            
-                echo '<---------------Deploy Docker Container on Deployment Server  Completed--------------->'
-                       }
-                                        }
-										}
 										
         }
 }
