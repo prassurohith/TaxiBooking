@@ -54,7 +54,7 @@ stage('Upload Artifact to Artifact Repository'){
                  script{
 				 
 				 def readPomVersion = readMavenPom file: 'pom.xml'
-				 def nexusRepo = readPomVersion.version.endsWith("SNAPSHOT") ? "My_Maven_Snapshots_Hosted_Repository" : "My_Maven_Release_Hosted_Repository"
+				 def nexusRepo = readPomVersion.version.endswith("SNAPSHOT") ? "My_Maven_Snapshots_Hosted_Repository" : "My_Maven_Release_Hosted_Repository"
 
                  nexusArtifactUploader artifacts: [[artifactId: 'TaxiBooking', classifier: '', file: 'target/TaxiBooking.war', type: 'war']], credentialsId: 'Nexus Artifactory', groupId: 'com.example.maven-project', nexusUrl: '10.0.1.14:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'My_Maven_Release_Hosted_Repository', version: "${readPomVersion.version}"
 
